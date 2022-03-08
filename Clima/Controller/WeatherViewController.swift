@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import CoreLocation // importing location lib.
 
 class WeatherViewController: UIViewController {
     
@@ -16,13 +17,22 @@ class WeatherViewController: UIViewController {
     @IBOutlet weak var temperatureLabel: UILabel!
     @IBOutlet weak var cityLabel: UILabel!
     @IBOutlet weak var searchTextField: UITextField!
-    
     var weatherManager = WeatherManager()
+    let locationManger = CLLocationManager() // creating obj to this class.
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        locationManger.delegate = self // to get access delegate
+        locationManger.requestWhenInUseAuthorization()
+        locationManger.requestLocation() // or use startUpdatingLocation()
+        
         weatherManager.delegate = self
         searchTextField.delegate = self // when screen load all delegated items will be loaded (interact with text field)
+    }
+    
+    @IBAction func locationButtonPressed(_ sender: UIButton) {
+        locationManger.requestLocation()
     }
 }
 
@@ -74,5 +84,23 @@ extension WeatherViewController : WeatherManagerDelegate {
     }
     func didFailWithError(error: Error) {
         print(error)
+    }
+}
+
+
+//MARK: - Location protocols handler.
+
+extension WeatherViewController : CLLocationManagerDelegate {
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        if let location = locations.last {
+            locationManger.stopUpdatingLocation() // once the device got the location then updating location need to stop.
+            let lat = location.coordinate.latitude
+            let long = location.coordinate.longitude
+            
+            weatherManager.fetchWeatherLatLong(latitude: lat,longitude: long)
+        }
+    }
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        print("My error method : \(error)")
     }
 }
